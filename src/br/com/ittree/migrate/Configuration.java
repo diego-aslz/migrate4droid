@@ -5,6 +5,11 @@ import java.util.List;
 
 import android.database.sqlite.SQLiteDatabase;
 
+/**
+ * Configuration with database connection and all the available migrations.
+ * @author nerde
+ *
+ */
 public class Configuration {
 	private SQLiteDatabase database;
 	private List<Migration> migrations = new ArrayList<Migration>();

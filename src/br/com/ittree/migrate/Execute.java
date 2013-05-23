@@ -236,12 +236,32 @@ public class Execute {
 		}
 	}
 
-	public static void executeStatement(String query) throws SQLException {
+	public static void execute(String query) {
+		try {
+			executeStatement(query);
+		} catch (SQLException e) {
+			String message = "Unable to execute " + query;
+			Logger.e(message, e);
+			throw new SchemaMigrationException(message, e);
+		}
+	}
+
+	private static void executeStatement(String query) throws SQLException {
 		SQLiteDatabase db = Migrate4Droid.getConfiguration().getDatabase();
 		db.execSQL(query);
 	}
 
-	public static void executeStatement(String query, Object ... args) throws SQLException {
+	public static void execute(String query, Object ... args) {
+		try {
+			executeStatement(query, args);
+		} catch (SQLException e) {
+			String message = "Unable to execute with parameters " + query;
+			Logger.e(message, e);
+			throw new SchemaMigrationException(message, e);
+		}
+	}
+
+	private static void executeStatement(String query, Object ... args) throws SQLException {
 		SQLiteDatabase db = Migrate4Droid.getConfiguration().getDatabase();
 		db.execSQL(query, args);
 	}

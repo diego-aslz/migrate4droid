@@ -24,4 +24,14 @@ public class M00_Setup implements Migration {
 	public void down() {
 		Execute.dropTable(DbMigration.TABLE);
 	}
+
+	@Override
+	public int getVersion() {
+		return 1;
+	}
+
+	@Override
+	public String getMigration() {
+		return "201305222340";
+	}
 }
