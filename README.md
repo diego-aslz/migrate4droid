@@ -81,7 +81,7 @@ public class M01_CreatePeople implements Migration {
 
   @Override
   public void down() {
-    Execute.dropTable(DbMigration.TABLE);
+    Execute.dropTable("people");
   }
 
   @Override
