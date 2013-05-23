@@ -22,8 +22,8 @@ public class DBHelper extends SqliteOpenHelper {
   // ...
 
   /**
-   * This is called when the database is first created. Usually you should call createTable statements here to create
-   * the tables that will store your data.
+   * This is called when the database is first created. Usually you should call createTable
+   * statements here to create the tables that will store your data.
    */
   @Override
   public void onCreate(SQLiteDatabase db) {
