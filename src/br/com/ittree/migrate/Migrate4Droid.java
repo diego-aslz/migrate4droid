@@ -17,34 +17,70 @@ public abstract class Migrate4Droid {
 	private static DbMigrationDao migrationDao;
 
 	/**
-	 * Executes all pending migrations between <code>oldVersion</code> and <code>newVersion</code>,
-	 * inclusive. A migration will get run only if it's added to the <code>configuration</code>, its
-	 * version is in the range and its migration key (obtained by {@link Migration#getMigration()}
-	 * is not in the migrations control table.
+	 * Moves the database from the <code>oldVersion</code> to the <code>newVersion</code>.
+	 * <br />
+	 * <br />
+	 * If the <code>oldVersion</code> is smaller than or equal to <code>newVersion</code>, all the
+	 * migrations in <code>configuration</code> which version is greater than or equal
+	 * to <code>oldVersion</code> and smaller than
+	 * or equal to the <code>newVersion</code> and which migration String is not in migrations
+	 * table will get upgraded. That is, their method {@link Migration#up()} will be called.
+	 * <br />
+	 * <br />
+	 * If the <code>oldVersion</code> is greater than <code>newVersion</code>, all the
+	 * migrations in <code>configuration</code> which version is greater than <code>newVersion</code>
+	 * and which migration String is not in migrations table will get downgraded.
+	 * That is, their method {@link Migration#down()} will be called.
 	 * 
-	 * @param configuration
+	 * @param configuration Configuration with the database and all the migrations that have
+	 * to be considered during this migration.
+	 * @param oldVersion Version the database is coming from.
+	 * @param newVersion Version the database is going to.
 	 */
 	public static void migrate(Configuration configuration, int oldVersion, int newVersion) {
 		Migrate4Droid.configuration = configuration;
 		ensureMigrationDao();
 		for (Migration m : configuration.getMigrations()) {
 			int v = m.getVersion();
-			if (v > oldVersion && v <= newVersion &&
+			if (v >= oldVersion && v <= newVersion &&
 					migrationDao.find(m.getMigration()) == null) {
 				runMigration(m);
-			}
+			} else if (oldVersion > newVersion && v > newVersion &&
+					migrationDao.find(m.getMigration()) != null)
+				runMigration(m, false);
 		}
 	}
 
+	/**
+	 * Executes the migration in the database, upgrading it.The method {@link Migration#up()} of
+	 * the {@link Migration} will get called
+	 * @param m The migration to run.
+	 */
 	private static void runMigration(Migration m) {
+		runMigration(m, true);
+	}
+
+	/**
+	 * Executes the migration in the database. If <code>up</code> is set to <code>true</code>,
+	 * then the method {@link Migration#up()} will be called. Otherwise, the method
+	 * {@link Migration#down()} will get called.
+	 * @param m The migration to run.
+	 * @param up If <code>true</code>, it will upgrade. Otherwise, it will downgrade.
+	 */
+	private static void runMigration(Migration m, boolean up) {
 		SQLiteDatabase db = configuration.getDatabase();
 		db.beginTransaction();
 		try {
-			m.up();
-			DbMigration mig = new DbMigration();
-			mig.setMigration(m.getMigration());
-			mig.setVersion(m.getVersion());
-			migrationDao.save(mig);
+			if (up) {
+				m.up();
+				DbMigration mig = new DbMigration();
+				mig.setMigration(m.getMigration());
+				mig.setVersion(m.getVersion());
+				migrationDao.save(mig);
+			} else {
+				m.down();
+				migrationDao.delete(m.getMigration());
+			}
 			db.setTransactionSuccessful();
 		} catch(Exception e) {
 			Logger.e("Exception when migrating " + m.getClass().getName(), e);

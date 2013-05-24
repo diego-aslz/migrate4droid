@@ -24,6 +24,11 @@ public class DbMigrationDao {
 		return null;
 	}
 
+	public boolean delete(String migration) {
+		return db.delete(DbMigration.TABLE, DbMigration.COLUMN_MIGRATION + " = ?", new String[] {
+				migration }) > 0;
+	}
+
 	public void save(DbMigration migration) {
 		ContentValues cv = new ContentValues();
 		cv.put(DbMigration.COLUMN_VERSION, migration.getVersion());
