@@ -10,7 +10,7 @@ way, thank you so much, Migrate4J team. Your project is awesome.
 
 ## Installation
 
-Add the migrate4droid.jar file to your lib directory.
+Add the migrate4droid.jar file to your <code>libs</code> directory.
 
 ## Configuring your database helper
 
