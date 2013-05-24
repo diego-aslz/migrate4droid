@@ -1,5 +1,7 @@
 package br.com.ittree.migrate;
 
+import java.util.List;
+
 import android.database.sqlite.SQLiteDatabase;
 import br.com.ittree.migrate.log.Logger;
 import br.com.ittree.migrate.misc.M00_Setup;
@@ -40,15 +42,20 @@ public abstract class Migrate4Droid {
 	public static void migrate(Configuration configuration, int oldVersion, int newVersion) {
 		Migrate4Droid.configuration = configuration;
 		ensureMigrationDao();
-		for (Migration m : configuration.getMigrations()) {
-			int v = m.getVersion();
-			if (v >= oldVersion && v <= newVersion &&
-					migrationDao.find(m.getMigration()) == null) {
-				runMigration(m);
-			} else if (oldVersion > newVersion && v > newVersion &&
-					migrationDao.find(m.getMigration()) != null)
-				runMigration(m, false);
-		}
+		List<Migration> migrations = configuration.getMigrations();
+		if (newVersion >= oldVersion)
+			for (Migration m : migrations) {
+				int v = m.getVersion();
+				if (v >= oldVersion && v <= newVersion &&
+						migrationDao.find(m.getMigration()) == null)
+					runMigration(m);
+			}
+		else
+			for (int i = migrations.size() - 1; i > -1; i--) {
+				Migration m = migrations.get(i);
+				if (m.getVersion() > newVersion && migrationDao.find(m.getMigration()) != null)
+					runMigration(m, false);
+			}
 	}
 
 	/**

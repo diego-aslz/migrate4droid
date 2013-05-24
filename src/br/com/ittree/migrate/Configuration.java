@@ -14,6 +14,15 @@ public class Configuration {
 	private SQLiteDatabase database;
 	private List<Migration> migrations = new ArrayList<Migration>();
 
+	public Configuration() {
+		super();
+	}
+
+	public Configuration(SQLiteDatabase database) {
+		this();
+		this.database = database;
+	}
+
 	public SQLiteDatabase getDatabase() {
 		return database;
 	}
@@ -26,7 +35,15 @@ public class Configuration {
 		return migrations;
 	}
 
-	public void addMigration(Migration m) {
+	/**
+	 * Adds a migration to be used when migrating with this configuration. The order you add
+	 * migrations here will be the order they will get run when upgrading and the inverse
+	 * order they will be run when downgrading.
+	 * @param m
+	 * @return
+	 */
+	public Configuration addMigration(Migration m) {
 		migrations.add(m);
+		return this;
 	}
 }
