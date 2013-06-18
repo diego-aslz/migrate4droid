@@ -1,5 +1,6 @@
 package br.com.ittree.migrate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.database.sqlite.SQLiteDatabase;
@@ -19,45 +20,55 @@ public abstract class Migrate4Droid {
 	private static DbMigrationDao migrationDao;
 
 	/**
-	 * Moves the database from the <code>oldVersion</code> to the <code>newVersion</code>.
-	 * <br />
-	 * <br />
-	 * If the <code>oldVersion</code> is smaller than or equal to <code>newVersion</code>, all the
-	 * migrations in <code>configuration</code> which version is greater than or equal
-	 * to <code>oldVersion</code> and smaller than
-	 * or equal to the <code>newVersion</code> and which migration String is not in migrations
-	 * table will get upgraded. That is, their method {@link Migration#up()} will be called.
-	 * <br />
-	 * <br />
-	 * If the <code>oldVersion</code> is greater than <code>newVersion</code>, all the
-	 * migrations in <code>configuration</code> which version is greater than <code>newVersion</code>
-	 * and which migration String is not in migrations table will get downgraded.
-	 * That is, their method {@link Migration#down()} will be called.
+	 * Moves the database to the <code>migration</code> specified, using the migrations in the
+	 * <code>configuration</code>, iterating them and checking:
+	 * <ul>
+	 * <li>If the migration's key is smaller than or equal to the desired <code>migration</code>'s
+	 * key parameterized and it's not present in the database, the migration will get upgraded.
+	 * That is, its method {@link Migration#up()} will be called. The order will be the same as
+	 * the migrations are in the <code>configuration</code>.</li>
+	 * 
+	 * <li>If the migration's key is greater than the desired <code>migration</code>'s
+	 * key parameterized and it IS present in the database, the migration will get downgraded.
+	 * That is, its method {@link Migration#down()} will be called. The order will be the opposite
+	 * the migrations are in the <code>configuration</code>.</li>
+	 * </ul>
 	 * 
 	 * @param configuration Configuration with the database and all the migrations that have
-	 * to be considered during this migration.
-	 * @param oldVersion String key of the migration the database is coming from.
-	 * @param newVersion Version the database is going to.
+	 * to be considered during the migration.
+	 * @param migration String key of the migration the database is desired to be.
 	 */
-	public static void migrate(Configuration configuration, String oldVersion, String newVersion) {
+	public static void migrate(Configuration configuration, String migration) {
 		Migrate4Droid.configuration = configuration;
 		ensureMigrationDao();
 		List<Migration> migrations = configuration.getMigrations();
-		if (newVersion.compareTo(oldVersion) >= 0)
-			for (Migration m : migrations) {
-				String mig = m.getMigration();
-				if (mig.compareTo(oldVersion) >= 0 && mig.compareTo(newVersion) <= 0 && 
-						migrationDao.find(m.getMigration()) == null)
-					runMigration(m);
-			}
-		else
-			for (int i = migrations.size() - 1; i > -1; i--) {
-				Migration m = migrations.get(i);
-				String mig = m.getMigration();
-				if (mig.compareTo(oldVersion) <= 0 && mig.compareTo(newVersion) > 0 &&
-						migrationDao.find(m.getMigration()) != null)
-					runMigration(m, false);
-			}
+		List<Migration> downs = new ArrayList<Migration>();
+		List<String> actual = migrationDao.getAllMigrations();
+		for (Migration m : migrations) {
+			String mig = m.getMigration();
+			if (mig.compareTo(migration) <= 0 && !actual.contains(mig))
+				runMigration(m);
+			else if (mig.compareTo(migration) > 0 && actual.contains(mig))
+				downs.add(0, m);
+		}
+		for (Migration m : downs)
+			runMigration(m, false);
+	}
+
+	/**
+	 * Runs all the migrations in the configuration which version key is not already
+	 * present in the database. The migration will get run in the same order they are in
+	 * the list.
+	 * @param configuration Configuration with the database and all the migrations.
+	 */
+	public static void migrate(Configuration configuration) {
+		Migrate4Droid.configuration = configuration;
+		ensureMigrationDao();
+		List<Migration> migrations = configuration.getMigrations();
+		List<String> actual = migrationDao.getAllMigrations();
+		for (Migration m : migrations)
+			if (!actual.contains(m.getMigration()))
+				runMigration(m);
 	}
 
 	/**
