@@ -22,12 +22,6 @@ public interface Migration {
 	public void down();
 
 	/**
-	 * Returns the database version of this migration.
-	 * @return
-	 */
-	public int getVersion();
-
-	/**
 	 * Returns a unique identifier of this migration. Please, make sure this will never repeat in
 	 * any of future migrations. You can use something like the current timestamp: YYYYMMDDHHMMSS.
 	 * @return

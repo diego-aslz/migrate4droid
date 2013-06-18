@@ -14,7 +14,7 @@ import br.com.ittree.migrate.model.DbMigrationDao;
  *
  */
 public abstract class Migrate4Droid {
-	public static final String VERSION = "0.0.1";
+	public static final String VERSION = "0.1.0";
 	private static Configuration configuration;
 	private static DbMigrationDao migrationDao;
 
@@ -36,24 +36,26 @@ public abstract class Migrate4Droid {
 	 * 
 	 * @param configuration Configuration with the database and all the migrations that have
 	 * to be considered during this migration.
-	 * @param oldVersion Version the database is coming from.
+	 * @param oldVersion String key of the migration the database is coming from.
 	 * @param newVersion Version the database is going to.
 	 */
-	public static void migrate(Configuration configuration, int oldVersion, int newVersion) {
+	public static void migrate(Configuration configuration, String oldVersion, String newVersion) {
 		Migrate4Droid.configuration = configuration;
 		ensureMigrationDao();
 		List<Migration> migrations = configuration.getMigrations();
-		if (newVersion >= oldVersion)
+		if (newVersion.compareTo(oldVersion) >= 0)
 			for (Migration m : migrations) {
-				int v = m.getVersion();
-				if (v >= oldVersion && v <= newVersion &&
+				String mig = m.getMigration();
+				if (mig.compareTo(oldVersion) >= 0 && mig.compareTo(newVersion) <= 0 && 
 						migrationDao.find(m.getMigration()) == null)
 					runMigration(m);
 			}
 		else
 			for (int i = migrations.size() - 1; i > -1; i--) {
 				Migration m = migrations.get(i);
-				if (m.getVersion() > newVersion && migrationDao.find(m.getMigration()) != null)
+				String mig = m.getMigration();
+				if (mig.compareTo(oldVersion) <= 0 && mig.compareTo(newVersion) > 0 &&
+						migrationDao.find(m.getMigration()) != null)
 					runMigration(m, false);
 			}
 	}
@@ -82,7 +84,6 @@ public abstract class Migrate4Droid {
 				m.up();
 				DbMigration mig = new DbMigration();
 				mig.setMigration(m.getMigration());
-				mig.setVersion(m.getVersion());
 				migrationDao.save(mig);
 			} else {
 				m.down();
