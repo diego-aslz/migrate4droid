@@ -98,6 +98,10 @@ do so, do this in your DBHelper:
 public class DBHelper extends SqliteOpenHelper {
   // ...
 
+  public DBHelper(Context context) {
+    super(context, DATABASE_NAME, null, MyConfiguration.getInstance().getVersion());
+  }
+
   /**
    * This is called when the database is first created. Usually you should call createTable
    * statements here to create the tables that will store your data.
