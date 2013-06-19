@@ -94,9 +94,7 @@ public abstract class Migrate4Droid {
 		try {
 			if (up) {
 				m.up();
-				DbMigration mig = new DbMigration();
-				mig.setMigration(m.getMigration());
-				migrationDao.save(mig);
+				markAsMigrated(m);
 			} else {
 				m.down();
 				migrationDao.delete(m.getMigration());
@@ -109,6 +107,31 @@ public abstract class Migrate4Droid {
 		}
 	}
 
+	/**
+	 * Register in the database all of the migrations in the <code>config</code>
+	 * parameter as run.
+	 * @param config Configuration with the migrations that need to be marked as run.
+	 */
+	public static void markAsMigrated(Configuration config) {
+		configuration = config;
+		ensureMigrationDao();
+		List<String> actual = migrationDao.getAllMigrations();
+		for (Migration m : config.getMigrations())
+			if (!actual.contains(m.getMigration()))
+				markAsMigrated(m);
+	}
+
+	protected static void markAsMigrated(Migration m) {
+		DbMigration mig = new DbMigration();
+		mig.setMigration(m.getMigration());
+		migrationDao.save(mig);
+	}
+
+	/**
+	 * If {@link Migrate4Droid#migrationDao} is <code>null</code>, instantiates it.
+	 * Otherwise, just updates the database in the Dao using the actual in the
+	 * {@link Migrate4Droid#configuration} object.
+	 */
 	private static void ensureMigrationDao() {
 		if (migrationDao == null)
 			migrationDao = new DbMigrationDao(configuration.getDatabase());

@@ -12,6 +12,7 @@ import android.database.sqlite.SQLiteDatabase;
  */
 public class Configuration {
 	private SQLiteDatabase database;
+	protected int initialVersion = 0;
 	private List<Migration> migrations = new ArrayList<Migration>();
 
 	public Configuration() {
@@ -45,5 +46,14 @@ public class Configuration {
 	public Configuration addMigration(Migration m) {
 		migrations.add(m);
 		return this;
+	}
+
+	/**
+	 * Calculates the database version based on the {@link Configuration#initialVersion}
+	 * field and the size of {@link Configuration#migrations} added.
+	 * @return
+	 */
+	public int getVersion() {
+		return initialVersion + migrations.size();
 	}
 }
